@@ -4,8 +4,11 @@ from custom_mwclient.wiki_client import WikiClient
 class FandomClient(WikiClient):
     """Extension of `WikiClient` for Fandom-specific stuff."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, wikiname: str, lang: str = "en", **kwargs):
+        url = f"https://{wikiname}.fandom.com"
+        if lang != "en":
+            url += '/' + lang
+        super().__init__(url, **kwargs)
 
 
     def get_current_wiki_name(self) -> str:

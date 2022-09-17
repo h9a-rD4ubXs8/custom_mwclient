@@ -407,18 +407,8 @@ class WikiClient(Site):
 
 
     def get_current_wiki_name(self):
-        """Return the name of the current host, without ``.gamepedia.com`` and ``.fandom.com``, and with ``/<lang>`` appended, if not English."""
-
-        api_result = self.client.api('query', meta='siteinfo', siprop='general')
-
-        sitename = api_result['query']['general']['servername']
-        sitename = sitename.replace('.gamepedia.com', '').replace('.fandom.com', '').replace('.wiki.gg', '')
-
-        sitelang = api_result['query']['general']['lang']
-        if sitelang != "en" and sitelang != '':
-            sitename += '/' + sitelang
-
-        return sitename
+        """Return the name of the current host."""
+        raise NotImplementedError
 
 
     def get_current_wiki_user(self):

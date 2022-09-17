@@ -412,10 +412,9 @@ class WikiClient(Site):
 
 
     def get_current_wiki_user(self):
-        """Returns the name of the currently logged in user."""
-
-        api_result = self.client.api('query', meta='userinfo')
-        wiki_user = api_result['query']['userinfo']['name']
+        """Return the name of the currently logged in user."""
+        api_result = self.api('query', meta='userinfo')
+        wiki_user = api_result.get('query', {}).get('userinfo', {}).get('name', '')
         return wiki_user
 
 

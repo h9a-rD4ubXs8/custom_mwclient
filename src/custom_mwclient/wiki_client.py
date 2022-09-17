@@ -405,6 +405,12 @@ class WikiClient(Site):
 
         return False
 
+    
+    def get_current_servername(self):
+        """Return the server name of the current wiki."""
+        api_result = self.api('query', meta='siteinfo', siprop='general')
+        return api_result.get('query', {}).get('general', {}).get('servername', '')
+
 
     def get_current_wiki_name(self):
         """Return the name of the current host."""

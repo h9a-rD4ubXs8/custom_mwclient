@@ -95,7 +95,7 @@ class WikiClient(Site):
         return self.client.pages[name].resolve_redirect().name
 
 
-    def save_(self, page: Page, text, summary=u'', minor=False, bot=True, section=None, log=None, **kwargs):
+    def save(self, page: Page, text, summary=u'', minor=False, bot=True, section=None, log=None, **kwargs):
         """Performs a page edit, retrying the login once if the edit fails due to the user being logged out.
 
         This function hopefully makes it easy to workaround the lag and frequent login timeouts

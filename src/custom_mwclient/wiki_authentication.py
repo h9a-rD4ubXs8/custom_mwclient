@@ -1,5 +1,4 @@
 import importlib.util
-import inspect
 import json
 import os
 from pathlib import Path
@@ -26,8 +25,8 @@ class WikiAuth():
         """Return an auth object with credentials loaded from a file."""
         with open(filename, encoding='utf-8') as f:
             if filetype == 'plaintext':
-                username = f.readline()
-                password = f.readline()
+                username = f.readline().strip()
+                password = f.readline().strip()
             elif filetype == 'json':
                 jsonfile_contents = json.load(f)
                 username = jsonfile_contents['username']
@@ -61,7 +60,7 @@ class WikiggAuth(WikiAuth):
     def from_file(cls):
         """Return an auth object with credentials loaded from a file."""
         key = "ryebot"
-        file = (
+        file = (  # "credentials" directory in the root directory
             Path(importlib.util.find_spec(__package__).origin).parents[2]
             / "credentials" / f"wikigg_{key}.txt"
         )

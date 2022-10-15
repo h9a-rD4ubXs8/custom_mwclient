@@ -433,7 +433,7 @@ class WikiClient(Site):
         return token
 
 
-    def api_continue(self, log, action: str, continue_name: str='', i: int=0, **kwargs):
+    def api_continue(self, action: str, continue_name: str='', i: int=0, **kwargs):
         """
         Provides an API call with recursive, thus unlimited "continue" capability (e.g. for when the number of category members may exceed the bot limit (5000) but we want to get all >5000 of them).
         Returns an array with the contents of each "action" (e.g. "query") call.
@@ -446,58 +446,42 @@ class WikiClient(Site):
             - Name of the ``continue`` attribute for the specified action (e.g. ``cmcontinue``). Defaults to first element in the ``continue`` array of the API result.
         3. i: int
             - Internally used by the recursion for debug. Do not use from outside!
+
+        Raises
+        ------
+        - ``ApiContinueError`` (with ``__cause__`` set to the actual exception)
         """
 
         i += 1
-        #log('\n[%s] Enter api_continue().' % i)
         try:
-            api_result = self.client.api(action, **kwargs)
-            #log('[{}] API result: {}'.format(i, api_result))
-        except:
-            log('\n[{}] ***ERROR*** while executing continued API call (parameters: action=\'{}\', {})'.format(i, action, kwargs))
-            log(exc_info=True, s='[{}] Error message:\n'.format(i))
-            log('[{}] Aborted API call.'.format(i))
-            return
+            api_result = self.api(action, **kwargs)
+        except Exception as exc:
+            raise ApiContinueError(i, action, kwargs) from exc
 
-        flag = True
-        try:
-            _ = api_result['continue']
-        except KeyError: # continue doesn't exist
-            flag = False
-        if flag:
-            if not continue_name:
-                #log(list(api_result['continue'].keys()))
-                continue_name = list(api_result['continue'].keys())[0]
-            if api_result['continue'][continue_name]:
-                #log('[{}] continue = {}'.format(i, api_result['continue'][continue_name]))
-                kwargs.__setitem__(continue_name, api_result['continue'][continue_name]) # add the continue parameter to the next API call
-                #log('[{}] Fetching new api result with the following parameters: action=\'{}\', {}'.format(i, action, kwargs))
-                next_api_result = self.api_continue(log, action, continue_name, i, **kwargs) # do recursion
-                #log('[{}] Received api result from previous call: {}'.format(i, next_api_result))
-                if next_api_result:
-                    #log('- Append this previous api result to api result from this call:')
-                    #log('--- This api result: %s' % [api_result[action]])
-                    #log('--- Previous api result that will be appended to above: %s' % next_api_result)
-
-                    if type(next_api_result) == collections.OrderedDict:
-                        next_api_result = [next_api_result]
-                    result = next_api_result
-                    result.append(api_result[action])
-                    #log('- Appended.')
-                    #log('[{}] Return:'.format(i))
-                    #log('-- %s' % result)
-                    #for x in result:
-                    #    log('---- %s' % x)
-                    return result
-                else: # error during API call
-                    #log('[%s] Return nothing.\n' % i)
-                    return
-        else: # reached top of the stack
-            #log('[{}] Return {}.\n'.format(i, api_result[action]))
-            if i == 1: # still in the first call, no continues were necessary at all
+        if 'continue' not in api_result:  # reached top of the stack
+            if i == 1:  # still in the first call, no continues were necessary at all
                 return [api_result[action]]
             else:
                 return api_result[action]
+        else:
+            if not continue_name:
+                continue_name = list(api_result['continue'].keys())[0]
+            if continue_name not in api_result['continue']:
+                raise RuntimeError(
+                    f'The "continue_name" of "{continue_name}" was not in the API call!'
+                )
+            # add the continue parameter to the next API call
+            kwargs[continue_name] = api_result['continue'][continue_name]
+            # do recursion
+            next_api_result = self.api_continue(action, continue_name, i, **kwargs)
+            if next_api_result:
+                if type(next_api_result) != list:
+                    next_api_result = [next_api_result]
+                result = next_api_result
+                result.append(api_result[action])
+                return result
+            else:  # error during API call
+                return
 
 
     def redirects_to_inclfragment(self, pagename: str):

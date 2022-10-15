@@ -433,7 +433,7 @@ class WikiClient(Site):
         return token
 
 
-    def api_continue(self, action: str, continue_name: str='', i: int=0, **kwargs):
+    def api_continue__recursive(self, action: str, continue_name: str='', i: int=0, **kwargs):
         """
         Provides an API call with recursive, thus unlimited "continue" capability (e.g. for when the number of category members may exceed the bot limit (5000) but we want to get all >5000 of them).
         Returns an array with the contents of each "action" (e.g. "query") call.
@@ -482,6 +482,56 @@ class WikiClient(Site):
                 return result
             else:  # error during API call
                 return
+
+
+    def api_continue(self, action: str, continue_name: str='', **kwargs):
+        """
+        Provides an API call with unlimited "continue" capability (e.g. for when the number of category members may exceed the bot limit (5000) but we want to get all >5000 of them).
+        Returns an array with the contents of each "action" (e.g. "query") call.
+
+        Parameters
+        ----------
+        1. action : str
+            - API action module (e.g. ``query``).
+        2. continue_name: str
+            - Name of the ``continue`` attribute for the specified action (e.g. ``cmcontinue``). Defaults to first element in the ``continue`` array of the API result.
+
+        Raises
+        ------
+        - ``ApiContinueError`` (with ``__cause__`` set to the actual exception)
+        """
+
+        user_input_continue_name = continue_name
+        api_results = []
+        i = -1
+        while True:
+            i += 1
+
+            # do API query
+            try:
+                api_result = self.api(action, **kwargs)
+            except Exception as exc:
+                raise ApiContinueError(i, action, kwargs) from exc
+            api_results.append(api_result[action])
+
+            if 'continue' not in api_result:
+                break
+
+            # determine the "continue" key for the next API call
+            if not continue_name:
+                continue_name = list(api_result['continue'].keys())[0]
+
+            # invalid "continue_name" parameter passed to this function?
+            if user_input_continue_name and user_input_continue_name not in api_result['continue']:
+                error_str = f'"{user_input_continue_name}" not found'
+                if continue_name:
+                    error_str += f', did you mean "{continue_name}"?'
+                raise RuntimeError(error_str)
+
+            # add the "continue" parameter to the next API call
+            kwargs[continue_name] = api_result['continue'][continue_name]
+
+        return api_results
 
 
     def redirects_to_inclfragment(self, pagename: str):

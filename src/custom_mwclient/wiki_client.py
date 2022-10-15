@@ -1,19 +1,13 @@
-import collections
-import datetime
 import time
-import logging
 
 from mwclient import Site
 from mwclient.page import Page
-from mwclient.errors import AssertUserFailedError
-from mwclient.errors import APIError
-from mwclient.errors import ProtectedPageError
+from mwclient.errors import AssertUserFailedError, APIError, ProtectedPageError
 from requests.exceptions import ReadTimeout
 
-from custom_mwclient.wiki_authentication import WikiAuth
-from custom_mwclient.wiki_content_error import WikiContentError
+from custom_mwclient.errors import ApiContinueError, RetriedLoginAndStillFailed
 from custom_mwclient.namespace import Namespace
-from custom_mwclient.errors import RetriedLoginAndStillFailed
+from custom_mwclient.wiki_authentication import WikiAuth
 
 
 class WikiClient(Site):
@@ -405,7 +399,7 @@ class WikiClient(Site):
 
         return False
 
-    
+
     def get_current_servername(self):
         """Return the server name of the current wiki."""
         api_result = self.api('query', meta='siteinfo', siprop='general')

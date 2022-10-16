@@ -43,8 +43,6 @@ class WikiggClient(WikiClient):
         sleeper = self.sleepers.make()
         while True:
             try:
-                page.edit(text, summary, minor, bot, section, **kwargs)
+                return page.edit(text, summary, minor, bot, section, **kwargs)
             except self.write_errors:
                 sleeper.sleep()
-            else:
-                break

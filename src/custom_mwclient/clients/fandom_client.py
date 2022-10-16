@@ -53,14 +53,14 @@ class FandomClient(WikiClient):
             - As in mwclient.Page.save().
         """
         try:
-            page.save(text, summary=summary, minor=minor, bot=bot, section=section, **kwargs)
+            return page.edit(text, summary=summary, minor=minor, bot=bot, section=section, **kwargs)
         except ProtectedPageError:
             if log:
                 log(exc_info=True, s='Error while saving page {}: Page is protected!'.format(page.name))
             else:
                 raise
         except self.write_errors:
-            self._retry_login_action(self._retry_save, 'edit', page=page, text=text, summary=summary, minor=minor,
+            return self._retry_login_action(self._retry_save, 'edit', page=page, text=text, summary=summary, minor=minor,
                                      bot=bot, section=section, log=log, **kwargs)
 
 
@@ -71,7 +71,7 @@ class FandomClient(WikiClient):
         text = kwargs.pop('text')
         log = kwargs.pop('log')
         try:
-            page.save(text, **kwargs)
+            return page.save(text, **kwargs)
         except ProtectedPageError:
             if log:
                 log(exc_info=True, s='Error while saving page {}: Page is protected!'.format(page.name))
@@ -81,10 +81,10 @@ class FandomClient(WikiClient):
 
     def move(self, page: Page, new_title, reason='', move_talk=True, no_redirect=False, move_subpages=False, ignore_warnings=False):
         try:
-            page.move(new_title, reason=reason, move_talk=move_talk, no_redirect=no_redirect, move_subpages=move_subpages, ignore_warnings=ignore_warnings)
+            return page.move(new_title, reason=reason, move_talk=move_talk, no_redirect=no_redirect, move_subpages=move_subpages, ignore_warnings=ignore_warnings)
         except APIError as e:
             if e.code == 'badtoken':
-                self._retry_login_action(self._retry_move, 'move', page=page, new_title=new_title, reason=reason, move_talk=move_talk, no_redirect=no_redirect, move_subpages=move_subpages, ignore_warnings=ignore_warnings)
+                return self._retry_login_action(self._retry_move, 'move', page=page, new_title=new_title, reason=reason, move_talk=move_talk, no_redirect=no_redirect, move_subpages=move_subpages, ignore_warnings=ignore_warnings)
             else:
                 raise e
 
@@ -93,15 +93,15 @@ class FandomClient(WikiClient):
         old_page: Page = kwargs.pop('page')
         page = self.pages[old_page.name]
         new_title = kwargs.pop('new_title')
-        page.move(new_title, **kwargs)
+        return page.move(new_title, **kwargs)
 
 
     def delete(self, page: Page, reason='', watch=False, unwatch=False, oldimage=False):
         try:
-            page.delete(reason=reason, watch=watch, unwatch=unwatch, oldimage=oldimage)
+            return page.delete(reason=reason, watch=watch, unwatch=unwatch, oldimage=oldimage)
         except APIError as e:
             if e.code == 'badtoken':
-                self._retry_login_action(self._retry_delete, 'delete', page=page, reason=reason,
+                return self._retry_login_action(self._retry_delete, 'delete', page=page, reason=reason,
                                          watch=watch, unwatch=unwatch, oldimage=oldimage)
             else:
                 raise e
@@ -110,24 +110,20 @@ class FandomClient(WikiClient):
     def _retry_delete(self, **kwargs):
         old_page: Page = kwargs.pop('page')
         page = self.pages[old_page.name]
-        page.delete(**kwargs)
+        return page.delete(**kwargs)
 
 
     def _retry_login_action(self, f, failure_type, **kwargs):
-        was_successful = False
         for retry in range(self.max_retries):
             self.relog()
             # don't sleep at all the first retry, and then increment in retry_interval intervals
             # default interval is 10, default retries is 3
             time.sleep((2 ** retry - 1) * self.retry_interval)
             try:
-                f(**kwargs)
-                was_successful = True
-                break
+                return f(**kwargs)
             except self.write_errors:
                 continue
-        if not was_successful:
-            raise RetriedLoginAndStillFailed(failure_type)
+        raise RetriedLoginAndStillFailed(failure_type)
 
 
     def api(self, action, http_method='POST', *args, **kwargs):

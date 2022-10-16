@@ -1,3 +1,5 @@
+from mwclient.page import Page
+
 from custom_mwclient.wiki_client import WikiClient
 
 
@@ -34,3 +36,15 @@ class WikiggClient(WikiClient):
             sitename += '/' + sitelang
 
         return sitename
+
+
+    def save(self, page: Page, text, summary='', minor=False, bot=True, section=None, **kwargs):
+        """Call the `save` method of the `page`, retrying if necessary."""
+        sleeper = self.sleepers.make()
+        while True:
+            try:
+                page.edit(text, summary, minor, bot, section, **kwargs)
+            except self.write_errors:
+                sleeper.sleep()
+            else:
+                break

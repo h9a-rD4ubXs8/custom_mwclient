@@ -178,7 +178,7 @@ class WikiClient(Site):
         - The name of the target page of the redirect.
         """
 
-        return self.client.pages[name].resolve_redirect().name
+        return self.pages[name].resolve_redirect().name
 
 
     def get_last_rev(self, page: Page, log, query='revid'):
@@ -190,7 +190,7 @@ class WikiClient(Site):
             - The name of the page to get the revision for.
         """
         try:
-            api_result = self.client.api('query', prop='revisions', titles=page.name, rvlimit=1) # https://terraria.gamepedia.com/api.php?action=query&prop=revisions&titles=User:Rye_Greenwood/Sandbox&rvlimit=1
+            api_result = self.api('query', prop='revisions', titles=page.name, rvlimit=1) # https://terraria.gamepedia.com/api.php?action=query&prop=revisions&titles=User:Rye_Greenwood/Sandbox&rvlimit=1
         except KeyboardInterrupt:
             raise
         except:
@@ -303,7 +303,8 @@ class WikiClient(Site):
 
     def get_current_wiki_name(self):
         """Return the name of the current host."""
-        raise NotImplementedError
+        # this function is mainly intended to be overridden in subclasses
+        return self.get_current_servername()
 
 
     def get_current_wiki_user(self):

@@ -11,6 +11,8 @@ class WikiggClient(WikiClient):
         url = f"https://{wikiname}.wiki.gg"
         if lang != "en":
             url += '/' + lang
+        if not "max_retries" in kwargs:
+            kwargs["max_retries"] = 10
         super().__init__(url, **kwargs)
 
 

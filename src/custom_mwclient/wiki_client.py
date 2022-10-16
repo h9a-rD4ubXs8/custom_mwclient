@@ -59,19 +59,19 @@ class WikiClient(Site):
         return ret
 
 
-    def save(self, page: Page, text, summary, minor, bot, section, **kwargs):
+    def save(self, page: Page, text, summary='', minor=False, bot=True, section=None, **kwargs):
         """Call the `save` method of the `page`."""
         # this function is mainly intended to be overridden in subclasses
         page.edit(text, summary, minor, bot, section, **kwargs)
 
 
-    def move(self, page: Page, new_title, reason, move_talk, no_redirect):
+    def move(self, page: Page, new_title, reason='', move_talk=True, no_redirect=False):
         """Call the `move` method of the `page`."""
         # this function is mainly intended to be overridden in subclasses
         page.move(new_title, reason, move_talk, no_redirect)
 
 
-    def delete(self, page: Page, reason, watch, unwatch, oldimage):
+    def delete(self, page: Page, reason='', watch=False, unwatch=False, oldimage=False):
         """Call the `delete` method of the `page`."""
         # this function is mainly intended to be overridden in subclasses
         page.delete(reason, watch, unwatch, oldimage)

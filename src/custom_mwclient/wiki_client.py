@@ -1,11 +1,9 @@
-import time
-
 from mwclient import Site
 from mwclient.page import Page
-from mwclient.errors import AssertUserFailedError, APIError, ProtectedPageError
+from mwclient.errors import AssertUserFailedError, APIError
 from requests.exceptions import ReadTimeout
 
-from custom_mwclient.errors import ApiContinueError, RetriedLoginAndStillFailed
+from custom_mwclient.errors import ApiContinueError
 from custom_mwclient.namespace import Namespace
 from custom_mwclient.wiki_authentication import WikiAuth
 

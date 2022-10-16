@@ -61,34 +61,6 @@ class WikiClient(Site):
         return ret
 
 
-    def pages_using(self, template: str, **kwargs):
-        """Return a list of ``mwclient.page`` objects that are transcluding the specified page."""
-
-        if ':' not in template:
-            title = 'Template:' + template
-        elif template.startswith(':'):
-            title = template[1:]
-        else:
-            title = template
-        return self.client.pages[title].embeddedin(**kwargs)
-
-
-    def target(self, name: str):
-        """Return the name of a page's redirect target.
-
-        Parameters
-        ----------
-        1. name : str
-            - The name of the redirect page.
-
-        Returns
-        -------
-        - The name of the target page of the redirect.
-        """
-
-        return self.client.pages[name].resolve_redirect().name
-
-
     def save(self, page: Page, text, summary=u'', minor=False, bot=True, section=None, log=None, **kwargs):
         """Performs a page edit, retrying the login once if the edit fails due to the user being logged out.
 
@@ -193,6 +165,22 @@ class WikiClient(Site):
             raise RetriedLoginAndStillFailed('api')
 
 
+    def target(self, name: str):
+        """Return the name of a page's redirect target.
+
+        Parameters
+        ----------
+        1. name : str
+            - The name of the redirect page.
+
+        Returns
+        -------
+        - The name of the target page of the redirect.
+        """
+
+        return self.client.pages[name].resolve_redirect().name
+
+
     def get_last_rev(self, page: Page, log, query='revid'):
         """Get the latest revision (rev) id or timestamp for a given page.
 
@@ -220,80 +208,6 @@ class WikiClient(Site):
 
         # rev = [revision for revision in page.revisions(limit=1, prop='ids')][0]['revid'] # this is a shorter alternative, but much much slower, since the limit=1 isn't recognized for some reason, and instead all revs are gathered
         return rev
-
-
-    def get_last_section(self, page: Page, log, output_as_Wikicode=False, strip=True, anchor=False):
-        """Get the heading and wikitext of the last section of the given page.
-
-        Parameters
-        ----------
-        1. page : mwclient.Page
-            - The name of the page to get the section from.
-        2. output_as_Wikicode : bool
-            - Whether to return the output as a Wikicode object instead of a string.
-        3. strip : bool
-            - Whether to trim the output (only valid if not output_as_Wikicode).
-        4. anchor : bool
-            - Whether to include the anchor of the heading in the output.
-
-        Returns
-        -------
-        Without anchor:
-            - (heading, content)
-        With anchor:
-            - ((headingtitle, headinganchor), content)
-        """
-
-        result = None
-        try:
-            wikitext = mwparserfromhell.parse(page.text())
-        except KeyboardInterrupt:
-            raise
-        except:
-            log('\n***ERROR*** while getting last section!')
-            log(exc_info=True, s='Error message:\n')
-            return None
-
-        # Get heading:
-        secs_whead = wikitext.get_sections(include_lead=False)
-        if secs_whead: # if there are no sections, just return None
-            lastsec = secs_whead[len(secs_whead) - 1]
-            heading = None
-            anchor_str = None
-            for head in lastsec.ifilter_headings():
-                heading = head
-            if anchor:
-                try:
-                    api_result = self.client.api('parse', page=page.name, prop='sections')
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    log('\n***ERROR*** while getting last section!')
-                    log(exc_info=True, s='Error message:\n')
-                    return None
-                secs = api_result['parse']['sections']
-                if len(secs) == 0:
-                    return None
-                anchor_str = secs[len(secs) - 1]['anchor']
-
-            # Get content:
-            secs_nohead = wikitext.get_sections(include_headings=False)
-            lastsec = secs_nohead[len(secs_nohead) - 1]
-            content = lastsec
-
-            # Format:
-            if not output_as_Wikicode:
-                content = str(content)
-                heading = str(heading)
-                if strip:
-                    content = content.strip()
-                    heading = heading.strip()
-            if anchor:
-                result = ((heading, anchor_str), content)
-            else:
-                result = (heading, content)
-
-        return result
 
 
     def find_summary_in_revs(self, page: Page, summary: str, log, user='Ryebot', limit=5, for_undo=False):
@@ -379,25 +293,6 @@ class WikiClient(Site):
                 result_namespaces.append(ns)
 
         return result_namespaces
-
-
-    def page_exists(self, pagename: str, log):
-        """Check whether a page with the specified name exists on the wiki."""
-        try:
-            api_result = self.client.api('query', prop='info', titles=pagename)
-        except KeyboardInterrupt:
-            raise
-        except:
-            log('\n***ERROR*** while checking whether the page "{}" exists!'.format(pagename))
-            log(exc_info=True, s='Error message:\n')
-            return False
-        try:
-            if not '-1' in api_result['query']['pages']:
-                return True
-        except KeyError: # api_result doesn't contain "pages"
-            pass
-
-        return False
 
 
     def get_current_servername(self):

@@ -1,3 +1,5 @@
+import urllib.parse
+
 from mwclient import Site
 from mwclient.page import Page
 from mwclient.errors import AssertUserFailedError, APIError
@@ -91,6 +93,27 @@ class WikiClient(Site):
         """
 
         return self.pages[name].resolve_redirect().name
+
+
+    def fullurl(self, **kwargs):
+        """Return the full URL to a page on the wiki.
+
+        The keyword arguments are the parameters to index.php
+        (https://www.mediawiki.org/wiki/Manual:Parameters_to_index.php), e.g.:
+        >>> site.fullurl(title='Project:Sandbox', action='edit')
+        >>> site.fullurl(diff=177126)
+
+        For the reserved parameter `from`, pass it as follows:
+        >>> site.fullurl(**{'from': 123})
+        """
+
+        return urllib.parse.urlunsplit((
+            self.scheme,
+            self.host,
+            self.path + 'index' + self.ext,
+            urllib.parse.urlencode(kwargs, quote_via=urllib.parse.quote),
+            ''
+        ))
 
 
     def get_last_rev(self, page: Page, log, query='revid'):

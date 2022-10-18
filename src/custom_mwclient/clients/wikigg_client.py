@@ -1,5 +1,3 @@
-from mwclient.page import Page
-
 from custom_mwclient.wiki_client import WikiClient
 
 
@@ -7,14 +5,20 @@ class WikiggClient(WikiClient):
     """Extension of `WikiClient` for wiki.gg-specific stuff.
 
     >>> site = WikiggClient("terraria", "de", WikiggAuth.from_file())
+
+    Wiki requests time out after 30 seconds by default when using the normal
+    `WikiClient`. This `WikiggClient` has a `timeout` argument that is set to
+    180 seconds (3 minutes) by default, in order to adapt to the slower servers.
     """
 
-    def __init__(self, wikiname: str, lang: str = "en", **kwargs):
+    def __init__(self, wikiname: str, lang: str = "en", timeout: int = 180, **kwargs):
         url = f"https://{wikiname}.wiki.gg"
         if lang != "en":
             url += '/' + lang
-        if not "max_retries" in kwargs:
-            kwargs["max_retries"] = 10
+        # the timeout arg is just a nice interface (the same functionality can
+        # be achieved by setting kwargs["reqs"]["timeout"]), which is why we have
+        # to merge the two (merge the timeout arg into the kwargs["reqs"] dict)
+        kwargs.setdefault("reqs", {}).setdefault("timeout", timeout)
         super().__init__(url, **kwargs)
 
 
@@ -36,13 +40,3 @@ class WikiggClient(WikiClient):
             sitename += '/' + sitelang
 
         return sitename
-
-
-    def save(self, page: Page, text, summary='', minor=False, bot=True, section=None, **kwargs):
-        """Call the `save` method of the `page`, retrying if necessary."""
-        sleeper = self.sleepers.make()
-        while True:
-            try:
-                return page.edit(text, summary, minor, bot, section, **kwargs)
-            except self.write_errors:
-                sleeper.sleep()

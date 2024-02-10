@@ -27,6 +27,8 @@ class WikiggClient(WikiClient):
 
         The `.wiki.gg` part is omitted and `/<lang>` is appended, if the
         language is not English.
+
+        Example: For `terraria.wiki.gg/de`, return `terraria/de`.
         """
 
         api_result = self.api('query', meta='siteinfo', siprop='general')

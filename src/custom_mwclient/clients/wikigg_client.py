@@ -16,9 +16,10 @@ class WikiggClient(WikiClient):
         if lang != "en":
             url += '/' + lang
         # the timeout arg is just a nice interface (the same functionality can
-        # be achieved by setting kwargs["reqs"]["timeout"]), which is why we have
-        # to merge the two (merge the timeout arg into the kwargs["reqs"] dict)
-        kwargs.setdefault("reqs", {}).setdefault("timeout", timeout)
+        # be achieved by setting kwargs["connection_options"]["timeout"]), which
+        # is why we have to merge the two (merge the timeout arg into the
+        # kwargs["connection_options"] dict)
+        kwargs.setdefault("connection_options", {}).setdefault("timeout", timeout)
         super().__init__(url, **kwargs)
 
 
